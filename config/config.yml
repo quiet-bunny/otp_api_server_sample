@@ -1,0 +1,6 @@
+development: &BASE
+  cache_store: MemoryStore
+  key_expire: 60
+  cached_key_expire: 600
+production:
+  <<: *BASE

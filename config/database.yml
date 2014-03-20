@@ -1,0 +1,8 @@
+development:
+  adapter: mysql2
+  username: root
+  password:
+  socket: /var/lib/mysql/mysql.sock
+  database: otp_api_development
+test:
+production:
