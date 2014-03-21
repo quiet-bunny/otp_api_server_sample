@@ -21,8 +21,8 @@ class User < ActiveRecord::Base
   end
 
   def validate_key(params)
-    if params["time_key"].present?
-      validate_time_key(params["time_key"])
+    if params["key"].present?
+      validate_time_key(params["key"])
     elsif params["cached_key"].present?
       validate_cached_key(params["cached_key"])
     else
@@ -31,24 +31,30 @@ class User < ActiveRecord::Base
   end
 
   def validate_time_key(key)
+    totp = ROTP::TOTP.new(self.secret)
+    timestamp = Time.now.to_i
+    (timestamp - App.config["key_expire"] .. timestamp + App.config["key_expire"]).step(30).any? do |time|
+      totp.at(time).to_s == key.to_s
+    end
   end
 
   def validate_cached_key(key)
-    cached_key = App.cache.read(cache_key)
-    App.cache.delete(cache_key)
-    cached_key == key.strip.tr("０-９", "0-9")
+    return false if key.blank?
+    result = App.cache.read(cache_key) == key.strip.tr("０-９", "0-9")
+    App.cache.delete(cache_key) if result
+    result
   end
 
   def generate_cached_key
     key = 6.times.inject("") do |s|
       s << (0..9).to_a.sample(1).first.to_s
     end
-    App.cache.write(self.cache_key, key, expires_in: self.application.cached_key_expire)
+    App.cache.write(cache_key, key, expires_in: self.application.cached_key_expire)
     key
   end
 
   def cache_key
-    [self.application_id, self.user_id]
+    ["cached_key", self.id]
   end
 
   class NotFound < StandardError; end

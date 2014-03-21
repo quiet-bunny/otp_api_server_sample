@@ -47,48 +47,48 @@ class OtpApi < Sinatra::Base
 
       get "/:user_id" do
         begin
-          json user
+          json({status: "success", user: user})
         rescue ::ActiveRecord::RecordNotFound
           raise ::User::NotFound
         end
       end
 
       post "" do
-        user = @app.push_user!(@data)
-        json user
+        json({status: "success", user: @app.push_user!(@data)})
       end
 
       get "/:user_id/key" do
-        json user.generate_cached_key
+        json({status: "success", key: user.generate_cached_key})
       end
 
       post "/:user_id/key" do
-        json user.validate_key(@data)
+        json({status: "success", result: user.validate_key(@data)})
       end
     end
 
     error ::Application::AuthFailed do
-      result = {status: "error", error: "ERR_APP_AUTH_FAILED"}
       status 400
-      json result
+      json({status: "error", error: "ERR_APP_AUTH_FAILED"})
     end
 
     error ::Application::NotFound do
-      result = {status: "error", error: "ERR_APP_NOT_FOUND"}
       status 404
-      json result
+      json({status: "error", error: "ERR_APP_NOT_FOUND"})
     end
 
     error ::User::NotFound do
-      result = {status: "error", error: "ERR_USER_NOT_FOUND"}
       status 404
-      json result
+      json({status: "error", error: "ERR_USER_NOT_FOUND"})
     end
 
     error ::User::AddFailed do
-      result = {status: "error", error: "ERR_USER_ADD_FAILED", messages: env['sinatra.error'].message}
       status 400
-      json result
+      json({status: "error", error: "ERR_USER_ADD_FAILED", messages: env['sinatra.error'].message})
+    end
+
+    error ::User::InvalidKeyType do
+      status 400
+      json({status: "error", error: "ERR_USER_INVALID_KEY_TYPE"})
     end
   end
 end
